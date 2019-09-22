@@ -1,0 +1,122 @@
+
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
+#include "DS1302.h"
+#include "DHT.h"
+String packet = "";
+File myFile;
+#define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
+#define TIME_TO_SLEEP  600        /* Time ESP32 will go to sleep (in seconds) */
+
+#define DHTPIN 25     // Digital pin connected to the DHT sensor
+DS1302 rtc;
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+DHT dht(DHTPIN, DHTTYPE);
+
+
+void setup(){
+    Serial.begin(115200);
+    dht.begin();
+    initializeSD();
+    //rtc.init(00, 54, 23, 2, 17, 9, 2019, H24);
+    if (SD.exists("/Data.csv")){
+        delay(50);
+      Serial.println("OK");
+    } else {
+      Serial.println("No File");
+      delay(50);
+       myFile = SD.open("/Data.csv", FILE_WRITE);
+       closeFile();
+       }
+}
+
+void loop(){
+  int val1 = analogRead(36);
+  int  val = map(val1, 0, 3400, 0, 100);
+  float h = dht.readHumidity();
+  // Read temperature as Celsius (the default)
+  float t = dht.readTemperature();
+    if (isnan(h) || isnan(t)) {
+    Serial.println(F("Failed to read from DHT sensor!"));
+    return;
+  }
+  rtc.read();
+  rtc.print();
+  //char times[30] = {rtc.print()};
+  //packet += times;
+//  char buffer[128];
+//  sprintf(buffer, rtc.print());
+
+//  Serial.println(buffer);
+  packet += rtc.data();
+  packet += ","; 
+  packet += h;
+  packet += ",";
+  packet += t;
+  packet += ",";
+  packet += val;
+  packet += ",";
+  packet += val1;
+
+  Serial.println(packet);
+  writeToFile(packet);
+
+  delay(1000);
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  esp_deep_sleep_start();
+
+}
+
+void initializeSD()
+{
+  Serial.println("Initializing SD card...");
+  pinMode(4, OUTPUT);
+  if (SD.begin(4))
+  {
+    Serial.println("SD card is ready to use.");
+    delay(50);
+  } else {
+    Serial.println("SD card initialization failed");
+    delay(50);
+    return;
+  }
+}
+
+
+int createFile(char filename[])
+{
+  Serial.print("create file");
+  myFile = SD.open(filename, FILE_WRITE);
+  closeFile();
+  if (SD.exists("/Data.csv")) {
+    Serial.println("Data.csv exists.");
+  } else {
+    Serial.println("Data.csv doesn't exist.");
+  }
+}
+
+void closeFile()
+{
+  if (myFile)
+  {
+    myFile.close();
+    Serial.println("File closed");
+  }
+}
+
+int writeToFile(String text)
+{
+  myFile = SD.open("/Data.csv", FILE_APPEND);
+  if (myFile)
+  {
+    myFile.println(text);
+    Serial.println("Writing to file: ");
+    Serial.println(text);
+    closeFile();
+  } else
+  {
+    Serial.println("Couldn't write to file");
+    setup();
+  }
+}
