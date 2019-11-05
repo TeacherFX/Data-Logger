@@ -7,7 +7,7 @@
 
 #define DS1302_CE_PIN   16   // Reset : 'RST'
 #define DS1302_IO_PIN   22   // DATA :  'DAT'
-#define DS1302_SCLK_PIN 14   // CLOCK : 'CLK'
+#define DS1302_SCLK_PIN 12   // CLOCK : 'CLK'
 
 #define bcd2bin(h, l) (((h) * 10) + (l))
 #define bin2bcd_h(x)  ((x) / 10)
