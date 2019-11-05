@@ -19,7 +19,9 @@ void setup(){
     Serial.begin(115200);
     dht.begin();
     initializeSD();
-    //rtc.init(00, 54, 23, 2, 17, 9, 2019, H24);
+    
+    //rtc.init(00, 54, 23, 2, 17, 9, 2019, H24); //Uncomment this line to set the time in the form of SS, MM, HH, 2, DD, MM, YYYY, H24
+    
     if (SD.exists("/Data.csv")){
         delay(50);
       Serial.println("OK");
@@ -32,8 +34,10 @@ void setup(){
 }
 
 void loop(){
-  int val1 = analogRead(36);
-  int  val = map(val1, 0, 3400, 0, 100);
+  int val1 = analogRead(36);  //Reading the soil sensor
+  int  val = map(val1, 0, 3400, 0, 100);  //Calibrating the percentage of soil moisture. Adjust by changing the 
+                                          //3400 higher or lower depending on the result while the sensor prings are submerged in water.
+                                          //The format is Analogue Value, Minimum Analogue value, Maximum Analogue value, 0%, 100%.
   float h = dht.readHumidity();
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
@@ -49,15 +53,15 @@ void loop(){
 //  sprintf(buffer, rtc.print());
 
 //  Serial.println(buffer);
-  packet += rtc.data();
+  packet += rtc.data();   //Adding Timestamp
   packet += ","; 
-  packet += h;
+  packet += h;            //Adding Humidity
   packet += ",";
-  packet += t;
+  packet += t;            //Adding Temperature
   packet += ",";
-  packet += val;
+  packet += val;          //Adding Soil Moisture value in percentage
   packet += ",";
-  packet += val1;
+  packet += val1;         //Adding Soil Moisture value in Analogue - Used to help calibrate Soil moisture in percentage
 
   Serial.println(packet);
   writeToFile(packet);
